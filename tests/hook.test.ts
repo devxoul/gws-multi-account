@@ -180,18 +180,22 @@ describe('opencode skill registration', () => {
 })
 
 describe('configPathCandidates', () => {
+  const worktree = path.join(path.sep, 'b')
+  const globalSuffix = path.join('.config', 'opencode', 'opencode.jsonc')
+  const globalSuffixJson = path.join('.config', 'opencode', 'opencode.json')
+
   test('project candidates come first, globals last', () => {
-    const cands = configPathCandidates({ directory: '/a', worktree: '/b' })
-    expect(cands[0]!.path).toBe('/b/opencode.jsonc')
-    expect(cands[1]!.path).toBe('/b/opencode.json')
-    expect(cands[2]!.path).toContain('/.config/opencode/opencode.jsonc')
-    expect(cands[3]!.path).toContain('/.config/opencode/opencode.json')
+    const cands = configPathCandidates({ directory: path.join(path.sep, 'a'), worktree })
+    expect(cands[0]!.path).toBe(path.join(worktree, 'opencode.jsonc'))
+    expect(cands[1]!.path).toBe(path.join(worktree, 'opencode.json'))
+    expect(cands[2]!.path).toContain(globalSuffix)
+    expect(cands[3]!.path).toContain(globalSuffixJson)
   })
 
   test('only globals when no project root is given', () => {
     const cands = configPathCandidates({})
     expect(cands).toHaveLength(2)
-    expect(cands[0]!.path).toContain('/.config/opencode/opencode.jsonc')
+    expect(cands[0]!.path).toContain(globalSuffix)
   })
 })
 
