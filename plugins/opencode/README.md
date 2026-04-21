@@ -7,7 +7,7 @@
 
 > Skill documents the contract. Plugin enforces it.
 
-This is the opencode companion to the Claude Code plugin in the sibling directory: [`plugins/gws-multi-account/`](../gws-multi-account/).
+This is the opencode companion to the Claude Code plugin in the sibling directory: [`plugins/claude/`](../claude/).
 
 ---
 
@@ -104,7 +104,7 @@ The skill walks through detecting the existing config, confirming the email via 
 Clone this repo and copy the compiled plugin into your project's `.opencode/plugins/`:
 
 ```bash
-cd plugins/opencode-gws-multi-account
+cd plugins/opencode
 bun install
 bun run build
 ```
@@ -184,8 +184,8 @@ my_gws_wrapper ...                # word-boundary match
 ## Layout
 
 ```
-plugins/opencode-gws-multi-account/
-├── package.json
+plugins/opencode/
+├── package.json                # npm package: opencode-gws-multi-account
 ├── tsconfig.json
 ├── .gitignore
 ├── LICENSE
@@ -233,5 +233,5 @@ Removing the plugin from `plugin: []` stops the hook, but the `skills.paths` ent
 
 ## Related
 
-- [`plugins/gws-multi-account/`](../gws-multi-account/) — Claude Code version of the same plugin.
-- [`plugins/opencode-gws-multi-account/skills/gws-multi-account/SKILL.md`](./skills/gws-multi-account/SKILL.md) — the skill this plugin ships and registers.
+- [`plugins/claude/`](../claude/) — Claude Code version of the same plugin.
+- [`skills/gws-multi-account/SKILL.md`](./skills/gws-multi-account/SKILL.md) — the skill this plugin ships and registers.

@@ -147,7 +147,7 @@ my_gws_wrapper ...                # word-boundary match
 ## Layout
 
 ```
-plugins/gws-multi-account/
+plugins/claude/
 ├── .claude-plugin/
 │   └── plugin.json             # Plugin manifest (name, version, hooks path)
 ├── hooks/

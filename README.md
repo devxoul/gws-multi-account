@@ -11,8 +11,8 @@ Each plugin combines:
 
 | Host | Location | Install |
 |---|---|---|
-| [Claude Code](https://claude.com/claude-code) | [`plugins/gws-multi-account/`](./plugins/gws-multi-account/) | `/plugin marketplace add devxoul/gws-multi-account` then `/plugin install gws-multi-account@gws-multi-account` |
-| [opencode](https://opencode.ai) | [`plugins/opencode-gws-multi-account/`](./plugins/opencode-gws-multi-account/) | add `"opencode-gws-multi-account"` to `plugin` in `opencode.json` |
+| [Claude Code](https://claude.com/claude-code) | [`plugins/claude/`](./plugins/claude/) | `/plugin marketplace add devxoul/gws-multi-account` then `/plugin install gws-multi-account@gws-multi-account` |
+| [opencode](https://opencode.ai) | [`plugins/opencode/`](./plugins/opencode/) | add `"opencode-gws-multi-account"` to `plugin` in `opencode.json` |
 
 See each plugin's README for full prerequisites, migration guide, and uninstall steps.
 
@@ -27,13 +27,13 @@ macOS, Linux, and Windows. Both plugins use only the runtime their host already 
 ├── .claude-plugin/
 │   └── marketplace.json                     # Claude Code marketplace catalog
 └── plugins/
-    ├── gws-multi-account/                   # Claude Code plugin
+    ├── claude/                              # Claude Code plugin
     │   ├── .claude-plugin/plugin.json
     │   ├── hooks/hooks.json
     │   ├── scripts/block-bare-gws.mjs
     │   ├── skills/gws-multi-account/SKILL.md
     │   └── README.md
-    └── opencode-gws-multi-account/          # opencode plugin (TypeScript, npm-publishable)
+    └── opencode/                            # opencode plugin (TypeScript, npm-publishable)
         ├── package.json
         ├── tsconfig.json
         ├── src/
