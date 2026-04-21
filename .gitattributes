@@ -1,0 +1,7 @@
+# Normalize all text files to LF on checkout, regardless of the host's
+# core.autocrlf setting. Without this, Windows CI runners get CRLF-converted
+# checkouts and oxfmt (LF-only) reports every file as unformatted.
+* text=auto eol=lf
+
+# Lockfiles are machine-generated; leave them exactly as written.
+bun.lock   -text
