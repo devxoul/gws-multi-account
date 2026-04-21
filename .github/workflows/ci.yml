@@ -8,7 +8,11 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
 
@@ -35,7 +39,12 @@ jobs:
       # freshly-built file will differ from what was committed. `git diff
       # --exit-code` returns non-zero when there are changes, which fails the
       # job and points the contributor at the missing build step.
+      #
+      # Linux-only: on Windows, git's default autocrlf would false-positive
+      # the check from CRLF normalization, not a real build-output mismatch.
       - name: Check hooks/hook.js is in sync with src/
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
         run: |
           git diff --exit-code hooks/ \
             || (echo "::error::hooks/hook.js is out of sync with src/. Run 'bun run build' and commit the updated file."; exit 1)

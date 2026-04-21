@@ -52,9 +52,10 @@ export function findViolation(command: string): string | null {
 export function buildDenyMessage(segment: string, pluginName: string): string {
   return (
     `Bare \`gws\` blocked by ${pluginName}. ` +
-    `The gws-multi-account layout requires \`${ENV_VAR}=~/.config/gws/<email>\` on every invocation. ` +
+    `The gws-multi-account layout requires \`${ENV_VAR}=~/.config/gws/<email>\` on every invocation ` +
+    `(resolves to \`%USERPROFILE%\\.config\\gws\\<email>\` on Windows). ` +
     `Offending segment: \`${segment}\`. ` +
-    `Fix: prefix the command, e.g. \`${ENV_VAR}=~/.config/gws/<email> ${segment}\`. ` +
-    'Run `cat ~/.config/gws/accounts.json` to list configured accounts.'
+    `Fix: prefix the command with the env var. ` +
+    'See `~/.config/gws/accounts.json` for configured accounts.'
   )
 }

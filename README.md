@@ -9,7 +9,7 @@ Both plugins share the same `parser.ts` and the same `SKILL.md`. One source tree
 
 ## Why
 
-The `gws` CLI reads `GOOGLE_WORKSPACE_CLI_CONFIG_DIR` to pick an account. If your agent forgets to set it, `gws` writes to the default account — often the wrong one. This package enforces the env var on every invocation: every `gws` call an agent runs must be prefixed with `GOOGLE_WORKSPACE_CLI_CONFIG_DIR=~/.config/gws/<email>`, or the call is blocked with an explanatory message the agent can act on.
+The `gws` CLI reads `GOOGLE_WORKSPACE_CLI_CONFIG_DIR` to pick an account. If your agent forgets to set it, `gws` writes to the default account — often the wrong one. This package enforces the env var on every invocation: every `gws` call an agent runs must be prefixed with `GOOGLE_WORKSPACE_CLI_CONFIG_DIR=~/.config/gws/<email>` (resolves to `%USERPROFILE%\.config\gws\<email>` on Windows), or the call is blocked with an explanatory message the agent can act on.
 
 See [`skills/gws-multi-account/SKILL.md`](./skills/gws-multi-account/SKILL.md) for the full layout contract.
 
@@ -37,7 +37,10 @@ On first run the plugin registers its bundled skill by appending the path to `sk
 
 ## Platform support
 
-macOS, Linux, Windows. No shell dependencies — the Claude hook runs under Node (bundled with Claude Code), the opencode plugin runs under Bun (bundled with opencode).
+- **macOS, Linux** — both plugins work out of the box. The Claude hook runs under Node (bundled with Claude Code), the opencode plugin runs under Bun (bundled with opencode). No shell dependencies.
+- **Windows** — the opencode plugin works. The Claude Code plugin is currently **blocked by an upstream Claude Code bug** ([anthropics/claude-code#32486](https://github.com/anthropics/claude-code/issues/32486)): `${CLAUDE_PLUGIN_ROOT}` in `hooks.json` is not expanded on Windows, so the hook path never resolves. The plugin logic (parser, hook entry, skill registration) is cross-platform — the blocker is variable interpolation inside Claude Code itself, not in this package. The opencode plugin uses a different hook mechanism and is unaffected.
+
+CI runs the full pipeline on Ubuntu, macOS, and Windows.
 
 ## Layout
 

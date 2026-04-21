@@ -5,17 +5,21 @@ description: 'Run the gws CLI (Google Workspace CLI) against multiple accounts s
 
 # gws — Multi-Account
 
-The [gws CLI](https://github.com/googleworkspace/cli) ships with a single-config-dir model: all credentials live under `~/.config/gws/`. This skill layers a **multi-account convention** on top:
+The [gws CLI](https://github.com/googleworkspace/cli) ships with a single-config-dir model: all credentials live under one directory. This skill layers a **multi-account convention** on top:
 
 - `~/.config/gws/accounts.json` — account registry (email + description).
 - `~/.config/gws/<email>/` — one config dir per account, holding `client_secret.json`, `credentials.enc`, `token_cache.json`, and `cache/`.
 
-Every `gws` invocation **must** set `GOOGLE_WORKSPACE_CLI_CONFIG_DIR=~/.config/gws/<email>` explicitly. There is no implicit default — pick an account every time.
+`gws` v0.4.2+ uses `~/.config/gws` on **all platforms** (macOS, Linux, Windows) — on Windows this resolves to `%USERPROFILE%\.config\gws` (e.g., `C:\Users\alice\.config\gws`). If you're on a pre-v0.4.2 install and your data is still under `%APPDATA%\gws`, migrate it or let `gws` continue using the legacy path (it auto-detects).
+
+Every `gws` invocation **must** set `GOOGLE_WORKSPACE_CLI_CONFIG_DIR` to the per-account directory explicitly. There is no implicit default — pick an account every time.
+
+> **Shell syntax note.** Examples below use POSIX shell (bash/zsh) — they work on macOS, Linux, and in any POSIX-compatible shell on Windows (Git Bash, WSL). For PowerShell and cmd.exe, see the [Selecting an account](#selecting-an-account) section for syntax equivalents.
 
 ## Layout
 
 ```
-~/.config/gws/
+~/.config/gws/                 ← %USERPROFILE%\.config\gws on Windows
 ├── accounts.json              ← registry (this skill's contract)
 ├── alice@example.com/         ← one dir per account, named by email
 │   ├── client_secret.json
@@ -55,16 +59,30 @@ Flat object keyed by email. Each value is metadata for that account.
    - If ambiguous, ask the user to pick.
 3. Set `GOOGLE_WORKSPACE_CLI_CONFIG_DIR=~/.config/gws/<email>` for the command.
 
+### macOS / Linux / Git Bash / WSL
+
 ```bash
-# Inspect accounts (run this first if you don't know what's configured)
 cat ~/.config/gws/accounts.json
 
-# Run a command against a specific account
 GOOGLE_WORKSPACE_CLI_CONFIG_DIR=~/.config/gws/alice@example.com \
   gws gmail users messages list --params '{"userId":"me"}'
+```
 
-GOOGLE_WORKSPACE_CLI_CONFIG_DIR=~/.config/gws/bob@work.com \
-  gws calendar events list --params '{"calendarId":"primary"}'
+### Windows (PowerShell)
+
+```powershell
+Get-Content "$env:USERPROFILE\.config\gws\accounts.json"
+
+$env:GOOGLE_WORKSPACE_CLI_CONFIG_DIR = "$env:USERPROFILE\.config\gws\alice@example.com"
+gws gmail users messages list --params '{"userId":"me"}'
+```
+
+### Windows (cmd)
+
+```cmd
+type "%USERPROFILE%\.config\gws\accounts.json"
+
+set "GOOGLE_WORKSPACE_CLI_CONFIG_DIR=%USERPROFILE%\.config\gws\alice@example.com" && gws gmail users messages list --params "{\"userId\":\"me\"}"
 ```
 
 Works identically across every `gws` service (gmail, calendar, drive, sheets, docs, slides, tasks, people, chat, forms, etc.).
@@ -82,26 +100,21 @@ When the user wants to register a new account:
 
 1. Ask for the account's **email** (this becomes the directory name and `accounts.json` key).
 2. Ask for a short **description** (1 line, how the user will refer to it).
-3. Create the directory:
-   ```bash
-   mkdir -p ~/.config/gws/<email>
-   ```
-4. Run the `gws auth` login flow against that directory:
+3. Create the account directory:
+   - bash / zsh / Git Bash / WSL: `mkdir -p ~/.config/gws/<email>`
+   - PowerShell: `New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.config\gws\<email>"`
+4. Run the `gws auth` login flow against that directory. If the user already has a `client_secret.json`, drop it into `~/.config/gws/<email>/client_secret.json` before running `gws auth login`.
    ```bash
    GOOGLE_WORKSPACE_CLI_CONFIG_DIR=~/.config/gws/<email> \
      GOOGLE_WORKSPACE_CLI_CLIENT_ID=<client_id> \
      GOOGLE_WORKSPACE_CLI_CLIENT_SECRET=<client_secret> \
      gws auth login
    ```
-   (If the user already has a `client_secret.json` for the account, drop it into `~/.config/gws/<email>/client_secret.json` before running `gws auth login`.)
-5. Append the account to `accounts.json` (preserve existing entries):
+5. Append the account to `accounts.json` (preserve existing entries). Use Node for cross-platform JSON merging — no `jq` dependency. Node is guaranteed present on any machine running Claude Code or opencode.
    ```bash
-   jq --arg email "<email>" --arg desc "<description>" \
-     '. + {($email): {description: $desc}}' \
-     ~/.config/gws/accounts.json > ~/.config/gws/accounts.json.tmp \
-     && mv ~/.config/gws/accounts.json.tmp ~/.config/gws/accounts.json
+   GWS_ACCOUNTS_JSON=~/.config/gws/accounts.json EMAIL=<email> DESC=<description> \
+     node -e "const fs=require('fs'),p=process.env.GWS_ACCOUNTS_JSON;const d=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};d[process.env.EMAIL]={description:process.env.DESC};fs.writeFileSync(p,JSON.stringify(d,null,2)+'\n');"
    ```
-   If `accounts.json` does not yet exist, create it with `echo '{}' > ~/.config/gws/accounts.json` first.
 6. Verify:
    ```bash
    GOOGLE_WORKSPACE_CLI_CONFIG_DIR=~/.config/gws/<email> \
@@ -112,9 +125,11 @@ When the user wants to register a new account:
 
 If `~/.config/gws/` contains credential files at the **root** (not inside an `<email>/` subdirectory), it's a legacy single-account setup. Migrate it before using this skill.
 
+On Windows, pre-v0.4.2 `gws` installs stored the config at `%APPDATA%\gws` instead of `%USERPROFILE%\.config\gws`. If you find credentials there, treat it as the legacy flat layout too — migrate into `~/.config/gws/<email>/` (which resolves to `%USERPROFILE%\.config\gws\<email>`) so newer `gws` versions pick it up.
+
 ### Detection
 
-Legacy layout is present when **any** of these exist directly under `~/.config/gws/`:
+Legacy layout is present when **any** of these exist directly under `~/.config/gws/` (or `%APPDATA%\gws\` on older Windows installs):
 
 - `client_secret.json`
 - `credentials.enc`
@@ -126,6 +141,13 @@ Check with:
 ```bash
 ls ~/.config/gws/client_secret.json ~/.config/gws/credentials.enc \
    ~/.config/gws/token_cache.json ~/.config/gws/.encryption_key 2>/dev/null
+```
+
+```powershell
+Get-ChildItem "$env:USERPROFILE\.config\gws\client_secret.json","$env:USERPROFILE\.config\gws\credentials.enc",`
+              "$env:USERPROFILE\.config\gws\token_cache.json","$env:USERPROFILE\.config\gws\.encryption_key",`
+              "$env:APPDATA\gws\client_secret.json","$env:APPDATA\gws\credentials.enc",`
+              "$env:APPDATA\gws\token_cache.json","$env:APPDATA\gws\.encryption_key" -ErrorAction SilentlyContinue
 ```
 
 ### Interactive migration flow
@@ -150,7 +172,9 @@ Walk the user through this step by step. **Do not skip the confirmation.**
    - Create / update `accounts.json` with `{ "<email>": { "description": "<description>" } }`.
    - Leave `~/.config/gws/.gitignore` (if present) untouched at the root.
 
-5. **Execute after the user confirms:**
+5. **Execute after the user confirms.**
+
+   **macOS / Linux:**
 
    ```bash
    EMAIL="<email>"
@@ -164,24 +188,34 @@ Walk the user through this step by step. **Do not skip the confirmation.**
      fi
    done
 
-   if [ ! -f ~/.config/gws/accounts.json ]; then
-     echo '{}' > ~/.config/gws/accounts.json
-   fi
-
-   jq --arg email "$EMAIL" --arg desc "$DESC" \
-     '. + {($email): {description: $desc}}' \
-     ~/.config/gws/accounts.json > ~/.config/gws/accounts.json.tmp \
-     && mv ~/.config/gws/accounts.json.tmp ~/.config/gws/accounts.json
+   GWS_ACCOUNTS_JSON=~/.config/gws/accounts.json EMAIL="$EMAIL" DESC="$DESC" \
+     node -e "const fs=require('fs'),p=process.env.GWS_ACCOUNTS_JSON;const d=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};d[process.env.EMAIL]={description:process.env.DESC};fs.writeFileSync(p,JSON.stringify(d,null,2)+'\n');"
    ```
 
-6. **Verify the migration:**
+   **Windows (PowerShell):**
 
-   ```bash
-   GOOGLE_WORKSPACE_CLI_CONFIG_DIR=~/.config/gws/"$EMAIL" \
-     gws gmail users getProfile --params '{"userId":"me"}'
+   ```powershell
+   $Email = "<email>"
+   $Desc  = "<description>"
+   # Source: "$env:APPDATA\gws" for pre-v0.4.2 installs, "$env:USERPROFILE\.config\gws" otherwise.
+   $Source = "$env:USERPROFILE\.config\gws"
+   # Always target ~/.config/gws on Windows too — that's where gws v0.4.2+ looks.
+   $Target = "$env:USERPROFILE\.config\gws\$Email"
+
+   New-Item -ItemType Directory -Force -Path $Target | Out-Null
+
+   foreach ($f in 'client_secret.json','credentials.enc','token_cache.json','.encryption_key','cache') {
+     $src = Join-Path $Source $f
+     if (Test-Path $src) { Move-Item $src (Join-Path $Target $f) }
+   }
+
+   $env:GWS_ACCOUNTS_JSON = "$env:USERPROFILE\.config\gws\accounts.json"
+   $env:EMAIL = $Email
+   $env:DESC = $Desc
+   node -e "const fs=require('fs'),p=process.env.GWS_ACCOUNTS_JSON;const d=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};d[process.env.EMAIL]={description:process.env.DESC};fs.writeFileSync(p,JSON.stringify(d,null,2)+'\n');"
    ```
 
-   Expect the same `emailAddress` as before.
+6. **Verify the migration.** Use the platform-appropriate command from [Selecting an account](#selecting-an-account) above and expect the same `emailAddress` as before.
 
 7. **Tell the user** they should now invoke `gws` with `GOOGLE_WORKSPACE_CLI_CONFIG_DIR=~/.config/gws/<email>` on every call. Bare `gws ...` without the env var will no longer find credentials.
 
@@ -194,5 +228,5 @@ Walk the user through this step by step. **Do not skip the confirmation.**
 ## Security
 
 - `~/.config/gws/<email>/` contains live OAuth credentials. Never commit, copy to shared locations, or include in logs.
-- The skill assumes the repo-level `~/.config/gws/.gitignore` keeps `credentials.enc`, `token_cache.json`, `.encryption_key`, and `cache/` untracked. Preserve it during migration.
+- The skill assumes a `.gitignore` at `~/.config/gws/.gitignore` keeps `credentials.enc`, `token_cache.json`, `.encryption_key`, and `cache/` untracked. Preserve it during migration.
 - `accounts.json` contains only emails and descriptions — safe to back up, but avoid committing it if descriptions reveal sensitive context.

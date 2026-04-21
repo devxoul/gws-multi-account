@@ -36,7 +36,7 @@ function findViolation(command) {
   return null;
 }
 function buildDenyMessage(segment, pluginName) {
-  return `Bare \`gws\` blocked by ${pluginName}. ` + `The gws-multi-account layout requires \`${ENV_VAR}=~/.config/gws/<email>\` on every invocation. ` + `Offending segment: \`${segment}\`. ` + `Fix: prefix the command, e.g. \`${ENV_VAR}=~/.config/gws/<email> ${segment}\`. ` + "Run `cat ~/.config/gws/accounts.json` to list configured accounts.";
+  return `Bare \`gws\` blocked by ${pluginName}. ` + `The gws-multi-account layout requires \`${ENV_VAR}=~/.config/gws/<email>\` on every invocation ` + `(resolves to \`%USERPROFILE%\\.config\\gws\\<email>\` on Windows). ` + `Offending segment: \`${segment}\`. ` + `Fix: prefix the command with the env var. ` + "See `~/.config/gws/accounts.json` for configured accounts.";
 }
 
 // src/claude/hook.ts
