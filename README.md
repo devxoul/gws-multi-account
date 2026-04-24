@@ -48,7 +48,7 @@ See [`skills/gws-multi-account/SKILL.md`](./skills/gws-multi-account/SKILL.md) f
 ### Claude Code
 
 ```
-/plugin marketplace add devxoul/gws-multi-account
+/plugin marketplace add indentcorp/gws-multi-account
 /plugin install gws-multi-account@gws-multi-account
 ```
 

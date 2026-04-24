@@ -12,12 +12,12 @@
     "opencode",
     "opencode-plugin"
   ],
-  "homepage": "https://github.com/devxoul/gws-multi-account",
+  "homepage": "https://github.com/indentcorp/gws-multi-account",
   "license": "MIT",
   "author": "Jeon Suyeol",
   "repository": {
     "type": "git",
-    "url": "https://github.com/devxoul/gws-multi-account.git"
+    "url": "https://github.com/indentcorp/gws-multi-account.git"
   },
   "files": [
     "dist",
